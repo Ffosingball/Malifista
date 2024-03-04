@@ -3,13 +3,25 @@ using System.Collections.Generic;
 using UnityEngine;
 
 
+
+//Class which generate territory for its own region
+//Basicly its pick the center point on the map
+//After expand its territory while there is free space
+//If it meets square which already occupied by other region it will not expand there
 class Region
 {
+    //Own number is number of its region
+    //x,y - coordinates of centers of this regions
+    //width and height of the map
     int x, y, width, height, ownNumber;
 
 
+    //Constructor for usual region
     public Region(int semiSquare, int width, int height,int ownNumber)
     {
+        //Initialize internal boundaries for generatint center of the region
+        //This is necessary in order to avoid generating all centers to near to each other
+        //so all regions will have appropriate size
         int minX=0,maxX=0,minY=0,maxY=0;
 
         this.width=width;
@@ -18,23 +30,27 @@ class Region
 
         checkSemiSquare(semiSquare,ref minX,ref maxX, ref minY, ref maxY);
 
+        //pick the central point inside internal boundaries
         x=UnityEngine.Random.Range(minX,maxX+1);
         y=UnityEngine.Random.Range(minY,maxY+1);
     }
 
 
-
-    public Region(int x, int y,int width,int height,int ownNumber)
+    //Constructor for the starter region where player will appear
+    public Region(int width,int height,int ownNumber)
     {
         this.ownNumber=ownNumber;
-        this.x=x;
-        this.y=y;
         this.width=width;
         this.height=height;
+
+        //Center of this region will be in the center of the map
+        this.x=width/2;
+        this.y=height/2;
     }
 
 
-
+    //This function give internal boundaries depending on the semisquare
+    //Semisquares is like quadrants in cartesian coordinate plane
     void checkSemiSquare(int semiSquare,ref int minX,ref int maxX,ref int minY, ref int maxY)
     {
         switch(semiSquare)
@@ -68,11 +84,13 @@ class Region
 
 
 
+    //Function which expand region
     public bool expand_region(ref int[,] region, int step)
     {
         bool finish=false;
         int changes=0;
 
+        //Expand region
         for(int l=(-1)*step; l<step+1;l++)
         {
             for(int h=(-1)*step; h<step+1; h++)
@@ -88,6 +106,9 @@ class Region
             }
         }
 
+        //If finish=false then there was some expansion in this step
+        //If true there wasn`t any expansion
+        //This need to stop while loop when all region cannot expand anymore
         if(changes==0)
             finish=true;
 
@@ -244,6 +265,8 @@ public class generate_map : MonoBehaviour
     }
 
 
+
+    //This function just delete current map of region
     void delete_regions_of_map()
     {
         for(int x=0; x<width;x++)
@@ -257,6 +280,7 @@ public class generate_map : MonoBehaviour
     }
 
 
+
     //Function for button which will regenerate map of corridors
     public void regenerate_map()
     {
@@ -266,6 +290,7 @@ public class generate_map : MonoBehaviour
 
 
 
+    //Function for button which will regenerate map of regions
     public void regenerate_regions_of_map()
     {
         delete_regions_of_map();
@@ -274,14 +299,19 @@ public class generate_map : MonoBehaviour
 
 
 
+    //Function which generate regions for the map
     void generate_regions_of_map()
     {
+        //Create array of regions
         Region[] regions = new Region[4];
 
-        regions[0]=new Region(width/2,height/2,width,height,1);
+        //Create starter region
+        regions[0]=new Region(width,height,1);
 
+        //Randomly pick semiSquare at which center point will be picked up
         int whichSemiSquare=UnityEngine.Random.Range(1,5);
         
+        //Create other 3 regions and semiSquares for them
         for(int i=1; i<4; i++)
         {
             whichSemiSquare--;
@@ -290,18 +320,25 @@ public class generate_map : MonoBehaviour
             regions[i]=new Region(whichSemiSquare,width,height,i+1);
         }
 
-        bool con=true;
-        int step=1;
-        bool[] doneRegions=new bool[4];
+
+        bool con=true;//tell then to stop while loop
+        int step=1;//step in expansion of the regions
+        bool[] doneRegions=new bool[4];//array for bools from all regions
+        //to check that all regions finished their expansion and stop loop
+
         while(con)
         {
+            //All regions expand their territory
             for(int i=0; i<4; i++)
             {
                 doneRegions[i]=regions[i].expand_region(ref region, step);
             }
 
+            //Check if all regions finished their expansion
             if(doneRegions[0] && doneRegions[1] && doneRegions[2] && doneRegions[3])
                 con=false;
+            
+            step++;
         }
 
 
@@ -310,6 +347,8 @@ public class generate_map : MonoBehaviour
 
 
 
+    //It go throug all array and create objects with 
+    //different colors which represent different regions
     void display_regions()
     {
         for(int x=0; x<width;x++)
@@ -318,22 +357,22 @@ public class generate_map : MonoBehaviour
             {
                 if(region[x,y]==1)
                 {
-                    //Create corridor
+                    //Create region 1
                     regionSquares[x,y]=Instantiate(regionSquaresObj[0], new Vector3(x-width,y-height,0f), Quaternion.Euler(0f,0f,0f));
                 }
                 else if(region[x,y]==2)
                 {
-                    //Create wall
+                    //Create region 2
                     regionSquares[x,y]=Instantiate(regionSquaresObj[1], new Vector3(x-width,y-height,0f), Quaternion.Euler(0f,0f,0f));
                 }
                 else if(region[x,y]==3)
                 {
-                    //Create wall
+                    //Create region 3
                     regionSquares[x,y]=Instantiate(regionSquaresObj[2], new Vector3(x-width,y-height,0f), Quaternion.Euler(0f,0f,0f));
                 }
                 else if(region[x,y]==4)
                 {
-                    //Create wall
+                    //Create region 4
                     regionSquares[x,y]=Instantiate(regionSquaresObj[3], new Vector3(x-width,y-height,0f), Quaternion.Euler(0f,0f,0f));
                 }
             }
