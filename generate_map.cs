@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 
 
@@ -95,7 +96,7 @@ class Region
         {
             for(int h=(-1)*step; h<step+1; h++)
             {
-                if(x+l>0 && x+l<width-1 && y+h>0 && y+h<width-1)
+                if(x+l>=0 && x+l<=width-1 && y+h>=0 && y+h<=width-1)
                 {
                     if(region[x+l,y+h]==0)
                     {
@@ -124,12 +125,17 @@ class Region
 public class generate_map : MonoBehaviour
 {
     public int width=10, height=10, howMuchCells=5;
-    //This array tell where put wall(0) and corridor(1)
+    //Array "map" tell where put wall(0) and corridor(1)
+    //Array "region" tell which squares at which regions (from 1 to 4. 1 is basic region)  
     private int[,] map, region;
-    public GameObject corridor, wall, center;
-    public GameObject[] regionSquaresObj=new GameObject[4];
-    //This is array of all objects which will show me how corridors will be generated
-    private GameObject[,] squares, regionSquares;
+    //Reference to Canvas at which will be created Images which represents corridors and regions
+    public Canvas canvas;
+    //This is array of all objects which will show me how corridors or regions will be generated
+    private GameObject[,] squaresShown;
+    //Bool variables to show if any of toddlers is on or off
+    public bool showsCorridors=false, showRegions=false;
+    //Bool variables which tell is something regenerated or is any map is displayed
+    private bool mapRegenerated=false, regionRegenerated=false, isShownMap=false;
 
 
     // Start is called before the first frame update
@@ -138,13 +144,63 @@ public class generate_map : MonoBehaviour
         //Initialize 2D arrays
         map=new int[width,height];
         region=new int[width,height];
-        squares=new GameObject[width,height];
-        regionSquares=new GameObject[width,height];
+        squaresShown=new GameObject[width,height];
 
         generate_map_of_corridors();
 
         generate_regions_of_map();
     }
+
+
+
+    void Update()
+    {
+        //Check is any of maps should be displayed
+        if(showsCorridors)
+        {
+            if(isShownMap==false)
+            {
+                display_squares_UI();
+                //Debug.Log("1");
+            }
+            else if(mapRegenerated)
+            {
+                delete_shown_objects();
+                display_squares_UI();
+                //Debug.Log("2");
+
+                mapRegenerated=false;
+            }
+        }
+        else if(showRegions)
+        {
+            if(isShownMap==false)
+            {
+                display_regions_UI();
+                //Debug.Log("3");
+            }
+            else if(regionRegenerated)
+            {
+                delete_shown_objects();
+                display_regions_UI();
+                //Debug.Log("4");
+
+                regionRegenerated=false;
+            }
+        }
+        else if(isShownMap)
+        {
+            delete_shown_objects();
+            //Debug.Log("5");
+
+            isShownMap=false;
+        }
+    }
+
+
+
+
+
 
 
     //This function use cellular automata to generate map of the game
@@ -198,9 +254,6 @@ public class generate_map : MonoBehaviour
                 map[x,y]=1;
             }
         }
-
-        //Display map of corridors for developer if he needs it
-        display_squares();
     }
 
 
@@ -228,27 +281,48 @@ public class generate_map : MonoBehaviour
     }
 
 
+
     //It go throug all Array and create two objects
     //Which represent walls and corridors
-    void display_squares()
+    void display_squares_UI()
     {
+        //Get screen sizes
+        Resolution screenSize = Screen.currentResolution;
+
         for(int x=0; x<width;x++)
         {
             for(int y=0; y<height; y++)
             {
+                //Create new image 
+                squaresShown[x,y] = new GameObject("Image");
+                squaresShown[x,y].transform.SetParent(canvas.transform); //Set this canvas as parent, so it will be shown on that canvas
+
+                //Add component for image
+                Image imageComponent = squaresShown[x,y].AddComponent<Image>();
+
+                //Set coords and sizes of the image
+                RectTransform imageRect = squaresShown[x,y].GetComponent<RectTransform>();
+                //It will be on the bottom left corner of the screen
+                imageRect.localPosition = new Vector3((x*4)-(screenSize.width/2)+10, (y*4)-(screenSize.height/2)+110, 0);
+                imageRect.sizeDelta = new Vector2(4, 4);
+
                 if(map[x,y]==1)
                 {
-                    //Create corridor
-                    squares[x,y]=Instantiate(corridor, new Vector3(x,y,0f), Quaternion.Euler(0f,0f,0f));
+                    //Set corridor
+                    imageComponent.color = Color.white;
                 }
                 else
                 {
-                    //Create wall
-                    squares[x,y]=Instantiate(wall, new Vector3(x,y,0f), Quaternion.Euler(0f,0f,0f));
+                    //Set wall
+                    imageComponent.color = Color.black;
                 }
             }
+            
         }
+
+        isShownMap=true;
     }
+
 
 
     //This function just delete current map of corridors
@@ -258,23 +332,7 @@ public class generate_map : MonoBehaviour
         {
             for(int y=0; y<height; y++)
             {
-                Destroy(squares[x,y]);
                 map[x,y]=0;
-            }
-        }
-    }
-
-
-
-    //This function just delete current map of region
-    void delete_regions_of_map()
-    {
-        for(int x=0; x<width;x++)
-        {
-            for(int y=0; y<height; y++)
-            {
-                Destroy(regionSquares[x,y]);
-                region[x,y]=0;
             }
         }
     }
@@ -286,6 +344,26 @@ public class generate_map : MonoBehaviour
     {
         delete_map();
         generate_map_of_corridors();
+
+        mapRegenerated=true;
+    }
+
+
+
+
+
+
+
+    //This function just delete current map of region
+    void delete_regions_of_map()
+    {
+        for(int x=0; x<width;x++)
+        {
+            for(int y=0; y<height; y++)
+            {
+                region[x,y]=0;
+            }
+        }
     }
 
 
@@ -295,6 +373,8 @@ public class generate_map : MonoBehaviour
     {
         delete_regions_of_map();
         generate_regions_of_map();
+
+        regionRegenerated=true;
     }
 
 
@@ -340,41 +420,125 @@ public class generate_map : MonoBehaviour
             
             step++;
         }
-
-
-        display_regions();
     }
 
 
 
     //It go throug all array and create objects with 
     //different colors which represent different regions
-    void display_regions()
+    void display_regions_UI()
     {
+        //Get screen sizes
+        Resolution screenSize = Screen.currentResolution;
+
         for(int x=0; x<width;x++)
         {
             for(int y=0; y<height; y++)
             {
+                //Create new image 
+                squaresShown[x,y] = new GameObject("Image");
+                squaresShown[x,y].transform.SetParent(canvas.transform); //Set this canvas as parent, so it will be shown on that canvas
+
+                //Add component for image
+                Image imageComponent = squaresShown[x,y].AddComponent<Image>();
+
+                //Set coords and sizes of the image
+                RectTransform imageRect = squaresShown[x,y].GetComponent<RectTransform>();
+                //It will be on the bottom left corner of the screen
+                imageRect.localPosition = new Vector3((x*4)-(screenSize.width/2)+10, (y*4)-(screenSize.height/2)+110, 0);
+                imageRect.sizeDelta = new Vector2(4, 4);
+
                 if(region[x,y]==1)
                 {
-                    //Create region 1
-                    regionSquares[x,y]=Instantiate(regionSquaresObj[0], new Vector3(x-width,y-height,0f), Quaternion.Euler(0f,0f,0f));
+                    //Color of the region 1
+                    imageComponent.color = new Color(0.56f, 0.56f, 0.56f, 1f);
                 }
                 else if(region[x,y]==2)
                 {
-                    //Create region 2
-                    regionSquares[x,y]=Instantiate(regionSquaresObj[1], new Vector3(x-width,y-height,0f), Quaternion.Euler(0f,0f,0f));
+                    //Color of the region 2
+                    imageComponent.color = new Color(0.05f, 0.44f, 0.94f, 1f);
                 }
                 else if(region[x,y]==3)
                 {
-                    //Create region 3
-                    regionSquares[x,y]=Instantiate(regionSquaresObj[2], new Vector3(x-width,y-height,0f), Quaternion.Euler(0f,0f,0f));
+                    //Color of the region 3
+                    imageComponent.color = new Color(0.94f, 0.05f, 0.29f, 1f);
                 }
                 else if(region[x,y]==4)
                 {
-                    //Create region 4
-                    regionSquares[x,y]=Instantiate(regionSquaresObj[3], new Vector3(x-width,y-height,0f), Quaternion.Euler(0f,0f,0f));
+                    //Color of the region 4
+                    imageComponent.color = new Color(0.56f, 0.9f, 0.16f, 1f);
                 }
+            }
+        }
+
+        isShownMap=true;
+    }
+
+
+
+
+
+
+    //Function which delete all objects which was displayed 
+    //to show map of corridors or regions
+    void delete_shown_objects()
+    {
+        if(squaresShown[0,0]!=null)
+        {
+            for(int x=0; x<width;x++)
+            {
+                for(int y=0; y<height; y++)
+                {
+                    Destroy(squaresShown[x,y]);
+                }
+            }
+        }
+    }
+
+
+
+    //Function for toddler which will show map of regions
+    public void show_map_of_regions_change()
+    {
+        if(showRegions)
+        {
+            showRegions=false;
+            delete_shown_objects();
+        }
+        else
+        {
+            showRegions=true;
+
+            if(showsCorridors)//Check if another toddler already on
+            {
+                showsCorridors=false;
+
+                delete_shown_objects();
+                display_regions_UI();
+            }
+        }
+    }
+
+
+
+    //Function for toddler which will show map of corridors
+    public void show_map_of_corridors_change()
+    {
+        if(showsCorridors)
+        {
+            showsCorridors=false;
+            delete_shown_objects();
+        }
+        else
+        {
+            showsCorridors=true;
+
+            if(showRegions)//Check if another toddler already on
+            {
+                showRegions=false;
+
+                delete_shown_objects();
+                display_squares_UI();
             }
         }
     }
