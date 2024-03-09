@@ -124,7 +124,10 @@ class Region
 
 public class generate_map : MonoBehaviour
 {
-    public int width=10, height=10, howMuchCells=5;
+    //How much squares will made of the level
+    public float width=10, height=10;
+    //How much iterates will be for cellular automata
+    public int howMuchCells=5;
     //Array "map" tell where put wall(0) and corridor(1)
     //Array "region" tell which squares at which regions (from 1 to 4. 1 is basic region)  
     private int[,] map, region;
@@ -136,19 +139,34 @@ public class generate_map : MonoBehaviour
     public bool showsCorridors=false, showRegions=false;
     //Bool variables which tell is something regenerated or is any map is displayed
     private bool mapRegenerated=false, regionRegenerated=false, isShownMap=false;
+    //It is for temporary level
+    //First four is corridors and their number is number of the region-1
+    //Another four is walls and yheir numbers is number of the region+3
+    //Last two is for border between regions
+    public GameObject[] blocksForGeneratingMap;
+    //Width and height of blocks of which made the level
+    public float widthCorner, widthMain;
+    //It needs to mave maps, so it will be fully shown on the scren
+    public int addToShowMapX=100,addToShowMapY=10;
+    //Reference to loading screen and square of which map is made of
+    public GameObject loadingScreen, square;
 
 
     // Start is called before the first frame update
     void Start()
     {
+        loadingScreen.SetActive(false);
         //Initialize 2D arrays
-        map=new int[width,height];
-        region=new int[width,height];
-        squaresShown=new GameObject[width,height];
+        map=new int[(int)width,(int)height];
+        region=new int[(int)width,(int)height];
+        squaresShown=new GameObject[(int)width,(int)height];
 
         generate_map_of_corridors();
 
         generate_regions_of_map();
+
+        //It is in courutine because it could take long time
+        StartCoroutine(create_level());
     }
 
 
@@ -209,13 +227,13 @@ public class generate_map : MonoBehaviour
     void generate_map_of_corridors()
     {
         //At the center always must be corridor because there will appear player
-        map[width/2,height/2]=1;
+        map[(int)width/2,(int)height/2]=1;
 
         //Iterate all squares 
         for(int i=0; i<howMuchCells; i++)
         {
             //Set initial coords
-            int y=height/2, x=width/2,direction=0;
+            int y=(int)height/2, x=(int)width/2,direction=0;
 
             //Set initial direction
             switch(UnityEngine.Random.Range(0,4))
@@ -282,8 +300,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //It go throug all Array and create two objects
-    //Which represent walls and corridors
+    //It go throug all Array and create map of corridors in canvas
     void display_squares_UI()
     {
         //Get screen sizes
@@ -293,28 +310,27 @@ public class generate_map : MonoBehaviour
         {
             for(int y=0; y<height; y++)
             {
-                //Create new image 
-                squaresShown[x,y] = new GameObject("Image");
+                //Create new game object
+                squaresShown[x,y] = Instantiate(square, new Vector3(0f,0f,0f), Quaternion.Euler(0f,0f,0f));
                 squaresShown[x,y].transform.SetParent(canvas.transform); //Set this canvas as parent, so it will be shown on that canvas
 
-                //Add component for image
-                Image imageComponent = squaresShown[x,y].AddComponent<Image>();
-
-                //Set coords and sizes of the image
-                RectTransform imageRect = squaresShown[x,y].GetComponent<RectTransform>();
+                //Set coords and sizes of the object
+                Transform squareTran = squaresShown[x,y].GetComponent<Transform>();
                 //It will be on the bottom left corner of the screen
-                imageRect.localPosition = new Vector3((x*4)-(screenSize.width/2)+10, (y*4)-(screenSize.height/2)+110, 0);
-                imageRect.sizeDelta = new Vector2(4, 4);
+                squareTran.localPosition = new Vector3((x*4)-(screenSize.width/2)+addToShowMapX, (y*4)-(screenSize.height/2)+addToShowMapY, 0);
+                squareTran.localScale = new Vector3(4, 4, 0f);
+
+                SpriteRenderer squareRen = squaresShown[x,y].GetComponent<SpriteRenderer>();
 
                 if(map[x,y]==1)
                 {
                     //Set corridor
-                    imageComponent.color = Color.white;
+                    squareRen.color = Color.white;
                 }
                 else
                 {
                     //Set wall
-                    imageComponent.color = Color.black;
+                    squareRen.color = Color.black;
                 }
             }
             
@@ -386,7 +402,7 @@ public class generate_map : MonoBehaviour
         Region[] regions = new Region[4];
 
         //Create starter region
-        regions[0]=new Region(width,height,1);
+        regions[0]=new Region((int)width,(int)height,1);
 
         //Randomly pick semiSquare at which center point will be picked up
         int whichSemiSquare=UnityEngine.Random.Range(1,5);
@@ -397,7 +413,7 @@ public class generate_map : MonoBehaviour
             whichSemiSquare--;
             if(whichSemiSquare==0)
                 whichSemiSquare=4;
-            regions[i]=new Region(whichSemiSquare,width,height,i+1);
+            regions[i]=new Region(whichSemiSquare,(int)width,(int)height,i+1);
         }
 
 
@@ -435,43 +451,202 @@ public class generate_map : MonoBehaviour
         {
             for(int y=0; y<height; y++)
             {
-                //Create new image 
-                squaresShown[x,y] = new GameObject("Image");
+                //Create new object
+                squaresShown[x,y] = Instantiate(square, new Vector3(0f,0f,0f), Quaternion.Euler(0f,0f,0f));
                 squaresShown[x,y].transform.SetParent(canvas.transform); //Set this canvas as parent, so it will be shown on that canvas
 
-                //Add component for image
-                Image imageComponent = squaresShown[x,y].AddComponent<Image>();
-
-                //Set coords and sizes of the image
-                RectTransform imageRect = squaresShown[x,y].GetComponent<RectTransform>();
+                //Set coords and sizes of the object
+                Transform squareTran = squaresShown[x,y].GetComponent<Transform>();
                 //It will be on the bottom left corner of the screen
-                imageRect.localPosition = new Vector3((x*4)-(screenSize.width/2)+10, (y*4)-(screenSize.height/2)+110, 0);
-                imageRect.sizeDelta = new Vector2(4, 4);
+                squareTran.localPosition = new Vector3((x*4)-(screenSize.width/2)+addToShowMapX, (y*4)-(screenSize.height/2)+addToShowMapY, 0);
+                squareTran.localScale = new Vector3(4, 4, 0);
+
+                SpriteRenderer squareRen = squaresShown[x,y].GetComponent<SpriteRenderer>();
 
                 if(region[x,y]==1)
                 {
                     //Color of the region 1
-                    imageComponent.color = new Color(0.56f, 0.56f, 0.56f, 1f);
+                    squareRen.color = new Color(0.56f, 0.56f, 0.56f, 1f);
                 }
                 else if(region[x,y]==2)
                 {
                     //Color of the region 2
-                    imageComponent.color = new Color(0.05f, 0.44f, 0.94f, 1f);
+                    squareRen.color = new Color(0.05f, 0.44f, 0.94f, 1f);
                 }
                 else if(region[x,y]==3)
                 {
                     //Color of the region 3
-                    imageComponent.color = new Color(0.94f, 0.05f, 0.29f, 1f);
+                    squareRen.color = new Color(0.94f, 0.05f, 0.29f, 1f);
                 }
                 else if(region[x,y]==4)
                 {
                     //Color of the region 4
-                    imageComponent.color = new Color(0.56f, 0.9f, 0.16f, 1f);
+                    squareRen.color = new Color(0.56f, 0.9f, 0.16f, 1f);
                 }
             }
         }
 
         isShownMap=true;
+    }
+
+
+
+
+
+
+    //Function which create level using generated maps of corridors and regions
+    private IEnumerator create_level()
+    {
+        int whichType=0;//Which type of square use from array of prephabs
+        loadingScreen.SetActive(true);//Show loading screen
+        yield return new WaitForSeconds(0.1f);//Coroutine requires do it
+
+        //Create main parts
+        for(int x=0; x<width;x++)
+        {
+            for(int y=0; y<height; y++)
+            {
+                //Check is it wall or corridor
+                if(map[x,y]==0)
+                {
+                    whichType=4;
+                }
+
+                check_region(ref whichType,x,y);
+
+                //It creates parts of the level at required position and set required sizes
+                GameObject temp = Instantiate(blocksForGeneratingMap[whichType], new Vector3((widthCorner+widthMain)*(x-(width/2)), (widthCorner+widthMain)*(y-(height/2)), 0f), Quaternion.Euler(0f,0f,0f));
+                temp.transform.localScale=new Vector3(widthMain, widthMain, 1);
+
+                whichType=0;//Reset it
+            }
+        }
+
+        //Create corner parts
+        for(int x=0; x<width-1;x++)
+        {
+            for(int y=0; y<height-1; y++)
+            {
+                //Check is it at the border between regions
+                if(region[x,y]!=region[x+1,y] || region[x,y]!=region[x,y+1] || region[x,y]!=region[x+1,y+1])
+                {
+                    whichType=8;
+
+                    //Check is there wall anywhere
+                    if(map[x,y]==0 || map[x,y+1]==0 || map[x+1,y]==0 || map[x+1,y+1]==0)
+                    {
+                        whichType++;
+                    }
+                }
+                else
+                {
+                    //Check is there wall anywhere
+                    if(map[x,y]==0 || map[x,y+1]==0 || map[x+1,y]==0 || map[x+1,y+1]==0)
+                    {
+                        whichType=4;
+                    }
+
+                    check_region(ref whichType,x,y);
+                }
+
+                //It creates parts of the level at required position and set required sizes
+                GameObject temp = Instantiate(blocksForGeneratingMap[whichType], new Vector3((widthCorner+widthMain)*(x-(width/2))+(widthMain/2)+(widthCorner/2), (widthCorner+widthMain)*(y-(height/2))+(widthMain/2)+(widthCorner/2), 0f), Quaternion.Euler(0f,0f,0f));
+                temp.transform.localScale=new Vector3(widthCorner, widthCorner, 1);
+
+                whichType=0;//Reset it
+            }
+        }
+
+        //Create middle horizontal parts
+        for(int x=0; x<width;x++)
+        {
+            for(int y=0; y<height-1; y++)
+            {
+                //Check is it at the border between regions
+                if(region[x,y]!=region[x,y+1])
+                {
+                    whichType=8;
+
+                    //Check is there wall anywhere
+                    if(map[x,y]==0 || map[x,y+1]==0)
+                    {
+                        whichType++;
+                    }
+                }
+                else
+                {
+                    //Check is there wall anywhere
+                    if(map[x,y]==0 || map[x,y+1]==0)
+                    {
+                        whichType=4;
+                    }
+
+                    check_region(ref whichType,x,y);
+                }
+
+                //It creates parts of the level at required position and set required sizes
+                GameObject temp = Instantiate(blocksForGeneratingMap[whichType], new Vector3((widthCorner+widthMain)*(x-(width/2)), (widthCorner+widthMain)*(y-(height/2))+(widthMain/2)+(widthCorner/2), 0f), Quaternion.Euler(0f,0f,0f));
+                temp.transform.localScale=new Vector3(widthMain, widthCorner, 1);
+
+                whichType=0;//Reset it
+            }
+        }
+
+        //Create middle vertical parts
+        for(int x=0; x<width-1;x++)
+        {
+            for(int y=0; y<height; y++)
+            {
+                //Check is it at the border between regions
+                if(region[x,y]!=region[x+1,y])
+                {
+                    whichType=8;
+
+                    //Check is there wall anywhere
+                    if(map[x,y]==0 || map[x+1,y]==0)
+                    {
+                        whichType++;
+                    }
+                }
+                else
+                {
+                    //Check is there wall anywhere
+                    if(map[x,y]==0 || map[x+1,y]==0)
+                    {
+                        whichType=4;
+                    }
+
+                    check_region(ref whichType,x,y);
+                }
+
+                //It creates parts of the level at required position and set required sizes
+                GameObject temp = Instantiate(blocksForGeneratingMap[whichType], new Vector3((widthCorner+widthMain)*(x-(width/2))+(widthMain/2)+(widthCorner/2), (widthCorner+widthMain)*(y-(height/2)), 0f), Quaternion.Euler(0f,0f,0f));
+                temp.transform.localScale=new Vector3(widthCorner, widthMain, 1);
+
+                whichType=0;//Reset it
+            }
+        }
+
+        yield return new WaitForSeconds(0.1f);
+        loadingScreen.SetActive(false);
+    }
+
+
+    //Function which set the right region
+    void check_region(ref int whichType,int x, int y)
+    {
+        switch(region[x,y])
+        {
+            case 2:
+                whichType++;
+                break;
+            case 3:
+                whichType+=2;
+                break;
+            case 4:
+                whichType+=3;
+                break;
+        }
     }
 
 
@@ -498,6 +673,7 @@ public class generate_map : MonoBehaviour
 
 
     //Function for toddler which will show map of regions
+    //Only one of two maps can be displayed
     public void show_map_of_regions_change()
     {
         if(showRegions)
@@ -522,6 +698,7 @@ public class generate_map : MonoBehaviour
 
 
     //Function for toddler which will show map of corridors
+    //Only one of two maps can be displayed
     public void show_map_of_corridors_change()
     {
         if(showsCorridors)
