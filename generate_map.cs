@@ -96,7 +96,7 @@ class Region
         {
             for(int h=(-1)*step; h<step+1; h++)
             {
-                if(x+l>=0 && x+l<=width-1 && y+h>=0 && y+h<=width-1)
+                if(x+l>=0 && x+l<=width-1 && y+h>=0 && y+h<=height-1)
                 {
                     if(region[x+l,y+h]==0)
                     {
@@ -126,6 +126,8 @@ public class generate_map : MonoBehaviour
 {
     //How much squares will made of the level
     public float width=10, height=10;
+    //This variables duplicate value from the original variables, so other classes can have access to them
+    public static float widthS, heightS, widthCornerS, widthMainS;
     //How much iterates will be for cellular automata
     public int howMuchCells=5;
     //Array "map" tell where put wall(0) and corridor(1)
@@ -160,6 +162,12 @@ public class generate_map : MonoBehaviour
         map=new int[(int)width,(int)height];
         region=new int[(int)width,(int)height];
         squaresShown=new GameObject[(int)width,(int)height];
+
+        //Dublicate its value
+        widthS=width;
+        heightS=height;
+        widthCornerS=widthCorner;
+        widthMainS=widthMain;
 
         generate_map_of_corridors();
 
