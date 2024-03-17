@@ -152,6 +152,8 @@ public class generate_map : MonoBehaviour
     public int addToShowMapX=100,addToShowMapY=10;
     //Reference to loading screen and square of which map is made of
     public GameObject loadingScreen, square;
+    //Reference to another class
+    public FindShortestWay addPoints;
 
 
     // Start is called before the first frame update
@@ -509,6 +511,25 @@ public class generate_map : MonoBehaviour
         loadingScreen.SetActive(true);//Show loading screen
         yield return new WaitForSeconds(0.1f);//Coroutine requires do it
 
+        //It count how many corridors will de on the level
+        //It need to initialize array of all points 
+        int n=0;
+        for(int x=0; x<width;x++)
+        {
+            for(int y=0; y<height; y++)
+            {
+                //Check is it wall or corridor
+                if(map[x,y]==1)
+                {
+                    n++;
+                }
+            }
+        }
+
+        //Initialize arrays in the FindShortestWay class
+        addPoints.InitializeArrays(n);
+        //Debug.Log("Number of poits: "+n);
+
         //Create main parts
         for(int x=0; x<width;x++)
         {
@@ -525,6 +546,11 @@ public class generate_map : MonoBehaviour
                 //It creates parts of the level at required position and set required sizes
                 GameObject temp = Instantiate(blocksForGeneratingMap[whichType], new Vector3((widthCorner+widthMain)*(x-(width/2)), (widthCorner+widthMain)*(y-(height/2)), 0f), Quaternion.Euler(0f,0f,0f));
                 temp.transform.localScale=new Vector3(widthMain, widthMain, 1);
+                
+                //Check is it a corridor
+                //If it true, it add its coordinates to the array of all points
+                if(whichType<4)
+                    addPoints.addCoords((widthCorner+widthMain)*(x-(width/2)),(widthCorner+widthMain)*(y-(height/2)));
 
                 whichType=0;//Reset it
             }
@@ -635,6 +661,9 @@ public class generate_map : MonoBehaviour
             }
         }
 
+        //Call function which will calculate all possible
+        //routes between points
+        addPoints.findDistancesBetPoints();
         yield return new WaitForSeconds(0.1f);
         loadingScreen.SetActive(false);
     }

@@ -79,7 +79,7 @@ public class player_movement : MonoBehaviour
         float resizeO = camera_.orthographicSize;
 
         //Check is size of the camera reaches limits or not
-        resizeO=resizeO+(scrollInput*scrollSpeed);
+        resizeO=resizeO+(scrollInput*scrollSpeed*(-1));
 
         //Check is size of the camera reaches limits or not
         //If it is out of limits it will set maximal or minimal allowed size of the camera
@@ -95,7 +95,7 @@ public class player_movement : MonoBehaviour
         }
         else
         {
-            speedChangeOfSizeOfCamera = speedChangeOfSizeOfCamera + (scrollInput * changeInSpeed);
+            speedChangeOfSizeOfCamera = speedChangeOfSizeOfCamera + (scrollInput * changeInSpeed * (-1));
         }
 
         //Change size of the camera
