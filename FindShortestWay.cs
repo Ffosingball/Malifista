@@ -136,9 +136,10 @@ public class FindShortestWay : MonoBehaviour
 
                     //Calculate distance between them
                     double distance=Math.Sqrt(Math.Pow(point1.y-point2.y,2)+Math.Pow(point1.x-point2.x,2));
+                    Vector2 direction = (point2 - point1).normalized;
 
                     //Use raycastHit2D to check is there any wall intersect with this line
-                    RaycastHit2D hit = Physics2D.Raycast(point1, point2, (float)distance, wallLayer);
+                    RaycastHit2D hit = Physics2D.Raycast(point1, direction, (float)distance, wallLayer);
 
                     //If line do not intersect add its real distance
                     if(hit.collider==null)
@@ -197,26 +198,44 @@ public class FindShortestWay : MonoBehaviour
 
 
 
-    /*public void showAllRoutes()
+    public void showAllRoutes()
     {
         if(showLines)
         {
             for(int i=0; i<linesShown.Length; i++)
             {
                 Destroy(linesShown[i]);
+
             }
+
+            showLines=false;
         }
         else
         {
+            int c=0;
+
             if(distancesCalculated)
             {
                 for(int i=0; i<numberOfPoints; i++)
                 {
                     for(int j=i; j<numberOfPoints; j++)
                     {
-                        if(distanceBetPoints[i,j]!=9999)
+                        if(distanceBetPoints[i,j]!=99999)
                         {
-                            linesShown[i] = Instantiate(line, new Vector3(, , 0f), Quaternion.Euler(0f,0f,0f));
+                            Vector2 point1,point2;
+                            point1.x=pointsArray[i].X;
+                            point1.y=pointsArray[i].Y;
+                            point2.x=pointsArray[j].X;
+                            point2.y=pointsArray[j].Y;
+
+                            Vector2 direction = point1 - point2;
+                            float angle = (Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg)-90;
+                            angle=angle<-180?angle+360:angle;
+
+                            linesShown[c] = Instantiate(line, new Vector3((point1.x+point2.x)/2, (point1.y+point2.y)/2, -1f), Quaternion.Euler(0f,0f,angle));
+                            linesShown[c].transform.localScale=new Vector3(1, distanceBetPoints[i,j], 1);
+
+                            c++;
                         }
                     }
                 }
@@ -228,5 +247,5 @@ public class FindShortestWay : MonoBehaviour
                 Debug.Log("Distances between points have not been calculated yet!");
             }
         }
-    }*/
+    }
 }
