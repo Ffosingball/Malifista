@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+//This code move camera of the player
 public class player_movement : MonoBehaviour
 {
     //Speed of movement

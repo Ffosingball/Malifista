@@ -174,9 +174,6 @@ public class generate_map : MonoBehaviour
         generate_map_of_corridors();
 
         generate_regions_of_map();
-
-        //It is in courutine because it could take long time
-        StartCoroutine(create_level());
     }
 
 
@@ -231,7 +228,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //This function use cellular automata to generate map of the game
+    //This procedure use cellular automata to generate map of the game
     //Basicly each square move at any direction and create corridor after himself 
     //and have 1/16 chance to turn right or 1/16 chance to turn left
     void generate_map_of_corridors()
@@ -285,7 +282,7 @@ public class generate_map : MonoBehaviour
     }
 
 
-    //Just check at which direction squre should moved and move there
+    //This function just check at which direction squre should moved and move there
     void move_square(ref int x, ref int y, ref int direction)
     {
         switch(direction%4)
@@ -310,7 +307,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //It go throug all Array and create map of corridors in canvas
+    //Procedure go throug all Array and create map of corridors in canvas
     void display_squares_UI()
     {
         //Get screen sizes
@@ -351,7 +348,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //This function just delete current map of corridors
+    //This procedure just delete current map of corridors
     void delete_map()
     {
         for(int x=0; x<width;x++)
@@ -365,7 +362,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //Function for button which will regenerate map of corridors
+    //Procedure for button which will regenerate map of corridors
     public void regenerate_map()
     {
         delete_map();
@@ -380,7 +377,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //This function just delete current map of region
+    //This procedure just delete current map of region
     void delete_regions_of_map()
     {
         for(int x=0; x<width;x++)
@@ -394,7 +391,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //Function for button which will regenerate map of regions
+    //Procedure for button which will regenerate map of regions
     public void regenerate_regions_of_map()
     {
         delete_regions_of_map();
@@ -404,8 +401,16 @@ public class generate_map : MonoBehaviour
     }
 
 
+    //Procedure for the button to generate level
+    public void generate_level()
+    {
+        //It is in courutine because it could take long time
+        StartCoroutine(create_level());
+    }
 
-    //Function which generate regions for the map
+
+
+    //Procedure which generate regions for the map
     void generate_regions_of_map()
     {
         //Create array of regions
@@ -504,7 +509,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //Function which create level using generated maps of corridors and regions
+    //Coroutine which create level using generated maps of corridors and regions
     private IEnumerator create_level()
     {
         int whichType=0;//Which type of square use from array of prephabs
@@ -661,7 +666,7 @@ public class generate_map : MonoBehaviour
             }
         }
 
-        //Call function which will calculate all possible
+        //Call procedure which will calculate all possible
         //routes between points
         addPoints.findDistancesBetPoints();
         yield return new WaitForSeconds(0.1f);
@@ -669,7 +674,7 @@ public class generate_map : MonoBehaviour
     }
 
 
-    //Function which set the right region
+    //Procedure which set the right region
     void check_region(ref int whichType,int x, int y)
     {
         switch(region[x,y])
@@ -691,7 +696,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //Function which delete all objects which was displayed 
+    //Procedure which delete all objects which was displayed 
     //to show map of corridors or regions
     void delete_shown_objects()
     {
@@ -709,7 +714,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //Function for toddler which will show map of regions
+    //Procedure for toddler which will show map of regions
     //Only one of two maps can be displayed
     public void show_map_of_regions_change()
     {
@@ -734,7 +739,7 @@ public class generate_map : MonoBehaviour
 
 
 
-    //Function for toddler which will show map of corridors
+    //Procedure for toddler which will show map of corridors
     //Only one of two maps can be displayed
     public void show_map_of_corridors_change()
     {
