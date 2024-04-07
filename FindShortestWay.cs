@@ -7,47 +7,12 @@ using TMPro;//It need to change text in UI object TextMeshPro
 
 
 
-//Class which contain x-coord, y-coord and id of the point 
-class IntersectionPoint
+//Structure which contain x-coord, y-coord and id of the point 
+public struct IntersectionPoint
 {
-    private float x, y;
-    private int id;
-
-
-    //Constructor of the class
-    public IntersectionPoint(float x, float y, int id)
-    {
-        this.x=x;
-        this.y=y;
-        this.id=id;
-    }
-
-
-    public float X
-    {
-        get
-        {
-            return x; // Return this field
-        }
-    }
-
-
-    public float Y
-    {
-        get
-        {
-            return y; // Return this field
-        }
-    }
-
-
-    public int ID
-    {
-        get
-        {
-            return id; // Return this field
-        }
-    }
+    public float x;
+    public float y;
+    public int id;
 }
 
 
@@ -56,7 +21,7 @@ class IntersectionPoint
 public class FindShortestWay : MonoBehaviour
 {
     //Array of all points
-    private IntersectionPoint[] pointsArray;
+    public IntersectionPoint[] pointsArray;
     //Array of distances between from all points to all points
     private float[,] distanceBetPoints;
     //Store id of the new point and number of points
@@ -94,14 +59,23 @@ public class FindShortestWay : MonoBehaviour
     }
 
 
+
+    //This function return pointsArray when called
+    public IntersectionPoint[] returnArray()
+    {
+        return pointsArray;
+    }
+
+
+
     //Add new point to the array until there are available space
     public void addCoords(float x, float y)
     {
         if(id<numberOfPoints && arrInitialized)
         {
-            IntersectionPoint p = new IntersectionPoint(x,y,id);
-
-            pointsArray[id]=p;
+            pointsArray[id].id=id;
+            pointsArray[id].x=x;
+            pointsArray[id].y=y;
 
             id++;
             //Debug.Log("Added point!");
@@ -134,10 +108,10 @@ public class FindShortestWay : MonoBehaviour
                 {
                     //Add coords of two points to vectors
                     Vector2 point1, point2;
-                    point1.x=pointsArray[i].X;
-                    point1.y=pointsArray[i].Y;
-                    point2.x=pointsArray[j].X;
-                    point2.y=pointsArray[j].Y;
+                    point1.x=pointsArray[i].x;
+                    point1.y=pointsArray[i].y;
+                    point2.x=pointsArray[j].x;
+                    point2.y=pointsArray[j].y;
                     //Debug.Log("Passed");
 
                     //Calculate distance between them
@@ -149,11 +123,13 @@ public class FindShortestWay : MonoBehaviour
 
                     //If line do not intersect add its real distance
                     //Also checks that line is not diagonal
-                    if((pointsArray[i].X==pointsArray[j].X || pointsArray[j].Y==pointsArray[i].Y) && hit.collider==null)
+                    if((pointsArray[i].x==pointsArray[j].x || pointsArray[j].y==pointsArray[i].y) && hit.collider==null)
                     {
                         distanceBetPoints[j,i]=(float)distance;
                         distanceBetPoints[i,j]=(float)distance;
                         l++;
+
+                        //Debug.Log(i+"; "+j+"; "+Math.Round(distance,2));
                     }
                     else
                     {
@@ -167,6 +143,7 @@ public class FindShortestWay : MonoBehaviour
 
         distancesCalculated=true;
         linesShown = new GameObject[l];//Initialize array
+        //Debug.Log("Num of lines "+l);
     }
 
 
@@ -193,7 +170,7 @@ public class FindShortestWay : MonoBehaviour
                 for(int i=0; i<numberOfPoints; i++)
                 {
                     //Create points on the level
-                    pointsShown[i] = Instantiate(point, new Vector3(pointsArray[i].X, pointsArray[i].Y, -1f), Quaternion.Euler(0f,0f,0f));
+                    pointsShown[i] = Instantiate(point, new Vector3(pointsArray[i].x, pointsArray[i].y, -1f), Quaternion.Euler(0f,0f,0f));
                     
                     //Find child gameObject of the created gameObject by its name
                     GameObject childCanva = pointsShown[i].transform.Find("Canvas").gameObject;
@@ -247,10 +224,10 @@ public class FindShortestWay : MonoBehaviour
                         {
                             //Create vectors for calculations
                             Vector2 point1,point2;
-                            point1.x=pointsArray[i].X;
-                            point1.y=pointsArray[i].Y;
-                            point2.x=pointsArray[j].X;
-                            point2.y=pointsArray[j].Y;
+                            point1.x=pointsArray[i].x;
+                            point1.y=pointsArray[i].y;
+                            point2.x=pointsArray[j].x;
+                            point2.y=pointsArray[j].y;
 
                             //Calculate angle of the line
                             Vector2 direction = point1 - point2;
@@ -287,7 +264,7 @@ public class FindShortestWay : MonoBehaviour
         for(int i=0; i<pointsArray.Length; i++)
         {
             //Calculate distance between point and coords
-            distance=Math.Sqrt(Math.Pow(point.x-pointsArray[i].X,2)+Math.Pow(point.y-pointsArray[i].Y,2));
+            distance=Math.Sqrt(Math.Pow(point.x-pointsArray[i].x,2)+Math.Pow(point.y-pointsArray[i].y,2));
             //Check is it bigger or smaller
             if(distance<min)
             {
@@ -298,5 +275,98 @@ public class FindShortestWay : MonoBehaviour
 
         //Return ID of the nearest point
         return id;
+    }
+
+
+
+
+    //This function use Dijkstra alghorithm to find the shortest
+    //Way between any points and return List of points which
+    //should be passed to came from pt1 (initial point) 
+    //to the pt2 (destination point)
+    public List<int> dijkstra_alghorithm(int pt1, int pt2)
+    {
+        //Create List of the List of the integers
+        //Each List in the List corresponding to each point
+        //And contain path from pt1 to its point
+        List<List<int>> pointsToPass = new List<List<int>>();
+        for(int i=0; i<pointsArray.Length; i++)
+        {
+            //Initialize all Lists
+            pointsToPass.Add(new List<int>());
+        }
+        
+        //Array which contain smallest total distance from pt1
+        //To the current point
+        float[] totalDistance = new float[pointsArray.Length];
+        for(int i=0; i<totalDistance.Length; i++)
+        {
+            //Set maximum distance to each point
+            totalDistance[i] = 99999;
+        }
+        
+        //This needed for loop to start find the path
+        totalDistance[pt1]=0;
+
+        //This loop will continue until the path to the
+        //destination point will not be found
+        while(totalDistance[pt2]==99999)
+        {
+            for(int i=0; i<pointsArray.Length; i++)
+            {
+                //This needed so it will start find the path from the initial point
+                int ti=pt1+i>=pointsArray.Length?pt1+i-pointsArray.Length:pt1+i;
+
+                for(int j=0; j<pointsArray.Length; j++)
+                {
+                    //Check that the path exist between two points and if 
+                    //distance for point ti was already calculated
+                    if(distanceBetPoints[ti,j]!=99999 && totalDistance[ti]!=99999)
+                    {                  
+                        //Check if new distance is smaller than that which already exist
+                        //for point j or if distance equal 99999
+                        if(totalDistance[j]>totalDistance[ti]+distanceBetPoints[ti,j] || totalDistance[j]==99999)
+                        {
+                            //Set new distance
+                            totalDistance[j]=totalDistance[ti]+distanceBetPoints[ti,j];
+
+                            //Set new path
+                            pointsToPass[j].Clear();
+                            pointsToPass[j].AddRange(pointsToPass[ti]);
+                            pointsToPass[j].Add(ti);
+
+                            /*Debug.Log("ti: "+ti+"; j: "+j);
+                            string stringOfPt="";
+                            foreach(var pt in l)
+                            {
+                                stringOfPt=stringOfPt+", "+pt;
+                            }
+                            Debug.Log(" "+stringOfPt);*/
+
+                            //Debug.Log("Added");
+                        }
+                    }
+                }
+            }
+        }
+
+        //Debug.Log("dist: "+totalDistance[pt2]);
+
+        //Add destination point to the List
+        pointsToPass[pt2].Add(pt2);
+
+        /*int k=0;
+        foreach(var l in pointsToPass)
+        {
+            string stringOfPt="";
+            foreach(var pt in l)
+            {
+                stringOfPt=stringOfPt+", "+pt;
+            }
+            Debug.Log(k+":    "+stringOfPt);
+            k++;
+        }*/
+
+        return pointsToPass[pt2];
     }
 }
